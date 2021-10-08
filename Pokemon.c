@@ -1,4 +1,49 @@
 #include <stdio.h>
+#include <string.h>
+
+typedef char String[21];
+
+typedef struct pokemonTag {
+	String name;
+	int type, hp, ap;
+} Pokemon;
+
+typedef struct playerTag {
+	String name;
+	Pokemon pokemon[3];
+} Player;
+
+/*
+	FUNCTION: setPlayerNames
+	PURPOSE: The function asks the user the name of the user and the name of the user's opponent
+	PRE-CONDITION: The user must accept that he or she must play the game.
+	POST-CONDITION: The user will then set the names of the user and the opponent.
+	PARAMETERS:
+		1. *user - Player struct that pertains to the user.
+		2. *cpu - Player struct that pertains to the opponent.
+*/
+
+void setPlayerNames(Player *user, Player *cpu) {
+	char answer;
+	
+	do {
+		system("@cls||clear");
+		printf("Hello there! What is your name? \n");
+		printf("Input: ");
+		scanf("%s", user->name);
+		printf("Hello, %s! What is the name of your opponent? \n", user->name);
+		printf("Input: ");
+		scanf("%s", cpu->name);
+		printf("To confirm, your name is %s and the opponent's name is %s? \n", user->name, cpu->name);
+		
+		do {
+			printf("Input (y/n): ");
+			scanf(" %c", &answer);
+			fflush(stdin);
+		} while(answer != 'Y' && answer != 'y' && answer != 'N' && answer != 'n');
+		
+	} while(answer != 'Y' && answer != 'y');
+}
 
 /*
 	FUNCTION: printEndingMessage
@@ -61,12 +106,13 @@ void printPokemonLogo() {
 
 int main() {
 	int gameMode;
+	Player user, cpu;
 	
 	printPokemonLogo();
 	gameMode = printMainMenu();
 	
 	if(gameMode == 1) {
-		// Insert code here
+		setPlayerNames(&user, &cpu);
 	}
 	else {
 		printEndingMessage();
