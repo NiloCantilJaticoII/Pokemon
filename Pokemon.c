@@ -164,6 +164,7 @@ void displayPokemonList(Pokemon pokemons[]) {
 
 void chooseUserPokemon(Player *player, Player *cpu, Pokemon pokemons[]) {
 	int input, userCounter = 0, cpuCounter = 0, i;
+	String dump;
 	
 	system("@cls||clear");
 	printf("There are nine Pokemons in total.\n");
@@ -219,7 +220,9 @@ void chooseUserPokemon(Player *player, Player *cpu, Pokemon pokemons[]) {
 		printf("Pokemon: %s\n", cpu->pokemon[i].name);
 	}
 	
-	printf("The battle will commence.\n");
+	printf("The battle will commence. Please press Enter to proceed.\n");
+	printf("Input: ");
+	gets(dump);
 }
 
 /*
@@ -309,8 +312,24 @@ void printPokemonLogo() {
 	printf("\t\t\t                                `'                            '-._| \n");
 }
 
+/*
+	FUNCTION NAME: startGame
+	DESCRIPTION: The function allows the user to battle with the CPU.
+	PARAMETERS:
+		1. user (Player) is a struct variable that contains the information of the user and the three Pokemons the user chose.
+		2. cpu  (Player) is a struct variable that contains the information of the cpu and the three Pokemons the cpu chose.
+	RETURN VALUE: Integer to indicate if the user wins or not.
+*/
+
+int startGame(Player user, Player cpu) {
+	int result = 1;
+	system("@cls||clear");
+	
+	return result;
+}
+
 int main() {
-	int gameMode;
+	int gameMode, winner;
 	Player user, cpu;
 	Pokemon pokemons[9];
 	
@@ -323,6 +342,7 @@ int main() {
 		setPlayerNames(&user, &cpu);
 		initializePokemons(pokemons);
 		chooseUserPokemon(&user, &cpu, pokemons);
+		winner = startGame(user, cpu);
 	}
 	else {
 		printEndingMessage();
