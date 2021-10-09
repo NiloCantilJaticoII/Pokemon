@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
 
 typedef char String[21];
 
@@ -11,7 +13,7 @@ typedef struct attackTag {
 typedef struct pokemonTag {
 	Attack attackStyle[3];
 	String name;
-	int type, hp, ap;
+	int type, hp, ap, taken;
 } Pokemon;
 
 typedef struct playerTag {
@@ -127,6 +129,7 @@ void initializePokemons(Pokemon pokemons[]) {
 	pokemons[8].ap = 50;
 	
 	for(i = 0; i < 9; i++) {
+		pokemons[i].taken = 0;
 		initializeAttackTypes(pokemons[i].type, pokemons[i].attackStyle);
 	}
 }
@@ -143,6 +146,7 @@ void displayPokemonList(Pokemon pokemons[]) {
 	int i;
 	
 	for(i = 0; i < 9; i++) {
+		printf("%d.\n", i+1);
 		printf("Name: %s\n", pokemons[i].name);
 		printf("Health Points: %d \t Attack Points: %d \n\n", pokemons[i].hp, pokemons[i].ap);
 	}
@@ -152,16 +156,70 @@ void displayPokemonList(Pokemon pokemons[]) {
 	FUNCTION NAME: chooseUserPokemon
 	DESCRIPTION: The function asks the user for their choice of Pokemon.
 	PARAMETERS:
-		1. user *(Player) is the struct variable containing the information of the player.
-		2. cpu   (Pokemon) is the struct variable containing the information of the Pokemon.
+		1. user        *(Player) is the struct variable containing the information of the player.
+		2. cpu          (Player) is the struct variable containing the information of the CPU.
+		3. pokemons[]   (Pokemon) is the struct variable containing the information of the Pokemon.
 	RETURN VALUE: None
 */
 
-void chooseUserPokemon(Player *player, Pokemon pokemons[]) {
+void chooseUserPokemon(Player *player, Player *cpu, Pokemon pokemons[]) {
+	int input, userCounter = 0, cpuCounter = 0, i;
+	
 	system("@cls||clear");
 	printf("There are nine Pokemons in total.\n");
 	printf("Please choose three out of the nine.\n\n");
 	displayPokemonList(pokemons);
+	
+	while(userCounter != 3) {
+		printf("Input: ");
+		scanf("%d", &input);
+		
+		if(input < 1 || input > 9) {
+			printf("Invalid input. Please try again.\n");
+		}
+		else {
+			if(pokemons[input-1].taken == 0) {
+				printf("You have chosen %s.\n", pokemons[input-1].name);
+				pokemons[input-1].taken = 1;
+				player->pokemon[userCounter] = pokemons[input-1];
+				userCounter = userCounter + 1;	
+			}
+			else {
+				printf("Pokemon is taken. Please choosen another.\n");
+			}
+		}
+		
+		fflush(stdin);
+	}
+	
+	printf("You have chosen the following Pokemons...\n");
+	for(i = 0; i < 3; i++) {
+		printf("Pokemon: %s\n", player->pokemon[i].name);
+	}
+	
+	printf("The CPU will pick its Pokemons.\n");
+	
+	while(cpuCounter != 3) {
+		input = (rand() % 9) + 1;
+		
+		if(input < 1 || input > 9) {
+			// Do nothing
+		}
+		else {
+			if(pokemons[input-1].taken == 0) {
+				pokemons[input-1].taken = 1;
+				cpu->pokemon[cpuCounter] = pokemons[input-1];
+				cpuCounter = cpuCounter + 1;
+			}
+		}
+	}
+	
+	printf("The CPU has chosen the following Pokemons...\n");
+	for(i = 0; i < 3; i++) {
+		printf("Pokemon: %s\n", cpu->pokemon[i].name);
+	}
+	
+	printf("The battle will commence.\n");
 }
 
 /*
@@ -256,13 +314,15 @@ int main() {
 	Player user, cpu;
 	Pokemon pokemons[9];
 	
+	srand(time(NULL));
+	
 	printPokemonLogo();
 	gameMode = printMainMenu();
 	
 	if(gameMode == 1) {
 		setPlayerNames(&user, &cpu);
 		initializePokemons(pokemons);
-		chooseUserPokemon(&user, pokemons);
+		chooseUserPokemon(&user, &cpu, pokemons);
 	}
 	else {
 		printEndingMessage();
