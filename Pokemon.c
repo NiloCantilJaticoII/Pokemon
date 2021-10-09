@@ -13,7 +13,7 @@ typedef struct attackTag {
 typedef struct pokemonTag {
 	Attack attackStyle[3];
 	String name;
-	int type, hp, ap, taken;
+	int type, hp, currentHP, ap, taken;
 } Pokemon;
 
 typedef struct playerTag {
@@ -130,6 +130,7 @@ void initializePokemons(Pokemon pokemons[]) {
 	
 	for(i = 0; i < 9; i++) {
 		pokemons[i].taken = 0;
+		pokemons[i].currentHP = pokemons[i].hp;
 		initializeAttackTypes(pokemons[i].type, pokemons[i].attackStyle);
 	}
 }
@@ -241,10 +242,10 @@ void setPlayerNames(Player *user, Player *cpu) {
 		system("@cls||clear");
 		printf("Hello there! What is your name? \n");
 		printf("Input: ");
-		scanf("%s", user->name);
+		gets(user->name);
 		printf("Hello, %s! What is the name of your opponent? \n", user->name);
 		printf("Input: ");
-		scanf("%s", cpu->name);
+		gets(cpu->name);
 		printf("To confirm, your name is %s and the opponent's name is %s? \n", user->name, cpu->name);
 		
 		do {
@@ -322,8 +323,98 @@ void printPokemonLogo() {
 */
 
 int startGame(Player user, Player cpu) {
-	int result = 1;
+	int game = 1, result = 1, option, attack, hit, i, userCurrentPokemon, cpuCurrentPokemon, damage;
+	float effectiveness;
+	
 	system("@cls||clear");
+	
+	// The game will loop indefinitely until either the user or the cpu runs out of Pokemons.
+	while(game == 1) {
+		printf("-------------------------------------------------------------\n");
+		printf("%s brings out %s!\n\n", user.name, user.pokemon[0].name);
+		printf("%s brings out %s!\n\n", cpu.name, cpu.pokemon[0].name);
+		
+		userCurrentPokemon = 0;
+		cpuCurrentPokemon = 0;
+		
+		printf("%s - HP: %d\n", user.pokemon[userCurrentPokemon].name, user.pokemon[userCurrentPokemon].currentHP);
+		printf("%s - HP: %d\n", cpu.pokemon[cpuCurrentPokemon].name, cpu.pokemon[cpuCurrentPokemon].currentHP);
+		
+		// Player's turn
+		printf("What will you do?\n\n");
+		printf("[1] Attack  [2] Potion  [3] Switch\n\n");
+		
+		do {
+			printf("Input: ");
+			scanf("%d", &option);
+		} while(option != 1 && option != 2 && option != 3);
+		
+		printf("\n");
+		
+		if(option == 1) {
+			printf("Which attack will you go for?\n\n");
+			for(i = 0; i < 3; i++) {
+				printf("[%d] %s  ", i+1, user.pokemon[userCurrentPokemon].attackStyle[i]);
+			}
+			
+			printf("\n\n");
+			
+			do {
+				printf("Input: ");
+				scanf("%d", &option);
+			} while(option != 1 && option != 2 && option != 3);
+			
+			if(user.pokemon[userCurrentPokemon].ap > user.pokemon[userCurrentPokemon].attackStyle[option].pp) {
+				attack = user.pokemon[userCurrentPokemon].attackStyle[option].pp;
+			}
+			else {
+				attack = user.pokemon[userCurrentPokemon].ap;
+			}
+			
+			attack = (rand() % 20) + attack;
+			
+			hit = (rand() % 101);
+			
+			if(hit <= user.pokemon[userCurrentPokemon].attackStyle[option].accuracy) {
+				hit = 1;
+			}
+			else {
+				hit = 0;
+			}
+			
+			effectiveness = 1.0;
+			
+			if(user.pokemon[userCurrentPokemon].type == 1 && cpu.pokemon[cpuCurrentPokemon].type == 3) {
+				effectiveness = 1.5;
+			}
+			if(user.pokemon[userCurrentPokemon].type == 2 && cpu.pokemon[cpuCurrentPokemon].type == 1) {
+				effectiveness = 1.5;
+			}
+			if(user.pokemon[userCurrentPokemon].type == 3 && cpu.pokemon[cpuCurrentPokemon].type == 2) {
+				effectiveness = 1.5;
+			}
+			
+			damage = attack * hit * effectiveness;
+			
+			printf("Damage: %d  Attack: %d  Hit: %d  Effectiveness: %f\n", damage, attack, hit, effectiveness);
+			
+			printf("\n%s inflicted %d damage to %s!\n\n", user.pokemon[userCurrentPokemon].name, damage, cpu.pokemon[cpuCurrentPokemon].name);
+			
+			cpu.pokemon[cpuCurrentPokemon].currentHP -= damage;
+			
+		}
+		else if(option == 2) {
+			
+		}
+		else {
+			
+		}
+		
+		printf("%s - HP: %d\n", user.pokemon[userCurrentPokemon].name, user.pokemon[userCurrentPokemon].hp);
+		printf("%s - HP: %d\n", cpu.pokemon[cpuCurrentPokemon].name, cpu.pokemon[cpuCurrentPokemon].hp);
+		
+		fflush(stdin);
+	}
 	
 	return result;
 }
