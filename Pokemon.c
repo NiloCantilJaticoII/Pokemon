@@ -19,6 +19,7 @@ typedef struct pokemonTag {
 typedef struct playerTag {
 	String name;
 	Pokemon pokemon[3];
+	int potions;
 } Player;
 
 /*
@@ -314,6 +315,110 @@ void printPokemonLogo() {
 }
 
 /*
+	FUNCTION NAME: calculateDamage
+	DESCRIPTION: The function calculates the damage inflicted by a Pokemon to another Pokemon.
+	PARAMETERS:
+		1. attacker       (Pokemon) is a struct variable containing the information of the attacking Pokemon.
+		2. defender       (Pokemon) is a struct variable containing the information of the defending Pokemon.
+		3. attackerOption (Integer) is a variable containing the choice of the attack.
+	RETURN VALUE: An integer value containing how much damage is inflicted.
+*/
+
+int calculateDamage(Pokemon attacker, Pokemon defender, int attackerOption) {
+	double effectiveness;
+	int damage, attack, hit, chance, accuracy;
+	int finalAttack;
+
+	// Attack
+	attack = attacker.ap;
+	if(attacker.ap > attacker.attackStyle[attackerOption].pp) {
+		attack = attacker.attackStyle[attackerOption].pp;
+	}
+	
+	finalAttack = (rand() % 21) + attack;
+	
+	// Hit
+	chance = rand() % 101;
+	accuracy = attacker.attackStyle[attackerOption].accuracy;
+	if(chance <= accuracy) {
+		hit = 1;
+	}
+	else {
+		hit = 0;
+	}
+	
+	// Effectiveness
+	effectiveness = 1.0;
+	if(attacker.type == 1 && defender.type == 3)
+		effectiveness = 1.5;
+	else if(attacker.type == 2 && defender.type == 1)
+		effectiveness = 1.5;
+	else if(attacker.type == 3 && defender.type == 2)
+		effectiveness = 1.5;
+		
+	if(effectiveness == 1.5 && hit == 1)
+		printf("It was quite effective!\n\n");
+	else if(hit == 0)
+		printf("The attack missed!\n\n");
+		
+	damage = finalAttack * hit * effectiveness;
+	
+	return damage;
+}
+
+/*
+	FUNCTION NAME: switchPokemon
+	DESCRIPTION: The function allows a person or cpu to switch to another Pokemon.
+	PARAMETERS:
+		1. player (Player) is a struct variable that contains the information of the player.
+		2. user   (Integer) is a variable to indicate if the player swapping is a user or a cpu.
+	RETURN VALUE: An integer value that contains the index of the next Pokemon.
+*/
+
+int switchPokemon(Player player, int user) {
+	int i, userChoice, cpuChoice, valid;
+	
+	printf("Which Pokemon will you pick?\n");
+	for(i = 0; i < 3; i++) {
+		printf("[%d] %s - ", i+1, player.pokemon[i].name);
+		if(player.pokemon[i].currentHP > 0) {
+			printf("Ready");
+		}
+		else {
+			printf("Incapacitated");
+		}
+		printf("\n");
+	}
+	
+	printf("\n");
+	
+	if(user) {
+		do {
+			printf("Input: ");
+			scanf("%d", &userChoice);
+			if(player.pokemon[userChoice-1].currentHP < 0) {
+				printf("The chosen Pokemon is incapacitated. Pick another.\n");
+				valid = 0;
+			}
+			else {
+				valid = 1;
+				return userChoice-1;
+			}
+		} while((userChoice != 1 && userChoice != 2 && userChoice != 3) || valid == 0);
+	}
+	else {
+		valid = 0;
+		while(valid == 0) {
+			cpuChoice = rand() % 3;
+			if(player.pokemon[cpuChoice].currentHP > 0) {
+				valid = 1;
+				return cpuChoice;
+			}
+		}
+	}
+}
+
+/*
 	FUNCTION NAME: startGame
 	DESCRIPTION: The function allows the user to battle with the CPU.
 	PARAMETERS:
@@ -323,95 +428,140 @@ void printPokemonLogo() {
 */
 
 int startGame(Player user, Player cpu) {
-	int game = 1, result = 1, option, attack, hit, i, userCurrentPokemon, cpuCurrentPokemon, damage;
-	float effectiveness;
+	int result = 1;
+	int game = 1, userCurrentPokemon, cpuCurrentPokemon, userOption, attackOption, i, damage;
+	int cpuOption, incapacitated;
+	String userPokemon, cpuPokemon;
 	
 	system("@cls||clear");
 	
-	// The game will loop indefinitely until either the user or the cpu runs out of Pokemons.
+	userCurrentPokemon = 0;
+	cpuCurrentPokemon = 0;
+	user.potions = 5;
+	cpu.potions = 5;
+	
+	strcpy(userPokemon, user.pokemon[userCurrentPokemon].name);
+	strcpy(cpuPokemon, cpu.pokemon[cpuCurrentPokemon].name);
+	
+	printf("-------------------------------------------------------------\n");
+	printf("%s brings out %s!\n", user.name, userPokemon);
+	printf("%s brings out %s!\n\n", cpu.name, cpuPokemon);
+	
 	while(game == 1) {
 		printf("-------------------------------------------------------------\n");
-		printf("%s brings out %s!\n\n", user.name, user.pokemon[0].name);
-		printf("%s brings out %s!\n\n", cpu.name, cpu.pokemon[0].name);
 		
-		userCurrentPokemon = 0;
-		cpuCurrentPokemon = 0;
+		printf("%s - HP: %d\n", userPokemon, user.pokemon[userCurrentPokemon].currentHP);
+		printf("%s - HP: %d\n\n", cpuPokemon, cpu.pokemon[cpuCurrentPokemon].currentHP);
 		
-		printf("%s - HP: %d\n", user.pokemon[userCurrentPokemon].name, user.pokemon[userCurrentPokemon].currentHP);
-		printf("%s - HP: %d\n", cpu.pokemon[cpuCurrentPokemon].name, cpu.pokemon[cpuCurrentPokemon].currentHP);
-		
-		// Player's turn
-		printf("What will you do?\n\n");
+		printf("What will you do?\n");
 		printf("[1] Attack  [2] Potion  [3] Switch\n\n");
 		
 		do {
 			printf("Input: ");
-			scanf("%d", &option);
-		} while(option != 1 && option != 2 && option != 3);
+			scanf("%d", &userOption);
+		} while(userOption != 1 && userOption != 2 && userOption != 3);
 		
-		printf("\n");
+		fflush(stdin);
 		
-		if(option == 1) {
-			printf("Which attack will you go for?\n\n");
+		if(userOption == 1) {
+			printf("\n");
+			printf("Which attack will you go for?\n");
 			for(i = 0; i < 3; i++) {
 				printf("[%d] %s  ", i+1, user.pokemon[userCurrentPokemon].attackStyle[i]);
 			}
-			
 			printf("\n\n");
 			
 			do {
 				printf("Input: ");
-				scanf("%d", &option);
-			} while(option != 1 && option != 2 && option != 3);
+				scanf("%d", &attackOption);
+			} while(attackOption != 1 && attackOption != 2 && attackOption != 3);
 			
-			if(user.pokemon[userCurrentPokemon].ap > user.pokemon[userCurrentPokemon].attackStyle[option].pp) {
-				attack = user.pokemon[userCurrentPokemon].attackStyle[option].pp;
-			}
-			else {
-				attack = user.pokemon[userCurrentPokemon].ap;
-			}
+			fflush(stdin);
 			
-			attack = (rand() % 20) + attack;
+			damage = calculateDamage(user.pokemon[userCurrentPokemon], cpu.pokemon[cpuCurrentPokemon], attackOption-1);
 			
-			hit = (rand() % 101);
-			
-			if(hit <= user.pokemon[userCurrentPokemon].attackStyle[option].accuracy) {
-				hit = 1;
-			}
-			else {
-				hit = 0;
-			}
-			
-			effectiveness = 1.0;
-			
-			if(user.pokemon[userCurrentPokemon].type == 1 && cpu.pokemon[cpuCurrentPokemon].type == 3) {
-				effectiveness = 1.5;
-			}
-			if(user.pokemon[userCurrentPokemon].type == 2 && cpu.pokemon[cpuCurrentPokemon].type == 1) {
-				effectiveness = 1.5;
-			}
-			if(user.pokemon[userCurrentPokemon].type == 3 && cpu.pokemon[cpuCurrentPokemon].type == 2) {
-				effectiveness = 1.5;
-			}
-			
-			damage = attack * hit * effectiveness;
-			
-			printf("Damage: %d  Attack: %d  Hit: %d  Effectiveness: %f\n", damage, attack, hit, effectiveness);
-			
-			printf("\n%s inflicted %d damage to %s!\n\n", user.pokemon[userCurrentPokemon].name, damage, cpu.pokemon[cpuCurrentPokemon].name);
+			printf("%s has taken %d damage!\n", cpuPokemon, damage);
 			
 			cpu.pokemon[cpuCurrentPokemon].currentHP -= damage;
 			
-		}
-		else if(option == 2) {
+			// Check Pokemon statuses
+			incapacitated = 0;
+			for(i = 0; i < 3; i++) {
+				if(cpu.pokemon[i].currentHP <= 0) {
+					incapacitated += 1;
+				}
+			}
 			
+			if(incapacitated == 3) {
+				break;
+			}
+			
+			if(cpu.pokemon[cpuCurrentPokemon].currentHP <= 0) {
+				cpuCurrentPokemon = switchPokemon(cpu, 0);
+				strcpy(cpuPokemon, cpu.pokemon[cpuCurrentPokemon].name);
+				printf("%s brings out %s!\n\n", cpu.name, cpuPokemon);
+			}
+		}
+		else if(userOption == 2) {
+			user.potions -= 1;
+			user.pokemon[userCurrentPokemon].currentHP += 20;
+			if(user.pokemon[userCurrentPokemon].currentHP >= user.pokemon[userCurrentPokemon].hp)
+				user.pokemon[userCurrentPokemon].currentHP = user.pokemon[userCurrentPokemon].hp;
+			printf("%s uses potion! %s has HP %d!\n", user.name, userPokemon, user.pokemon[userCurrentPokemon].currentHP);
+			printf("%s has %d potions left.\n", user.name, user.potions);
 		}
 		else {
-			
+			userCurrentPokemon = switchPokemon(user, 1);
+			strcpy(userPokemon, user.pokemon[userCurrentPokemon].name);
+			printf("%s brings out %s!\n\n", user.name, userPokemon);
 		}
 		
-		printf("%s - HP: %d\n", user.pokemon[userCurrentPokemon].name, user.pokemon[userCurrentPokemon].hp);
-		printf("%s - HP: %d\n", cpu.pokemon[cpuCurrentPokemon].name, cpu.pokemon[cpuCurrentPokemon].hp);
+		printf("-------------------------------------------------------------\n");
+		printf("%s - HP: %d\n", userPokemon, user.pokemon[userCurrentPokemon].currentHP);
+		printf("%s - HP: %d\n\n", cpuPokemon, cpu.pokemon[cpuCurrentPokemon].currentHP);
+		
+		cpuOption = (rand() % 100) + 1;
+		
+		if(cpuOption > 0 && cpuOption < 67) {
+			attackOption = rand() % 3;
+			damage = calculateDamage(cpu.pokemon[userCurrentPokemon], user.pokemon[cpuCurrentPokemon], attackOption);
+			
+			printf("%s has taken %d damage!\n", userPokemon, damage);
+			
+			user.pokemon[cpuCurrentPokemon].currentHP -= damage;
+			
+			// Check Pokemon statuses
+			incapacitated = 0;
+			for(i = 0; i < 3; i++) {
+				if(user.pokemon[i].currentHP <= 0) {
+					incapacitated += 1;
+				}
+			}
+			
+			if(incapacitated == 3) {
+				result = 0;
+				break;
+			}
+			
+			if(user.pokemon[cpuCurrentPokemon].currentHP <= 0) {
+				userCurrentPokemon = switchPokemon(user, 1);
+				strcpy(userPokemon, user.pokemon[userCurrentPokemon].name);
+				printf("%s brings out %s!\n\n", user.name, userPokemon);
+			}
+		}
+		else if(cpuOption > 66 && cpuOption < 84) {
+			cpu.potions -= 1;
+			cpu.pokemon[cpuCurrentPokemon].currentHP += 20;
+			if(cpu.pokemon[cpuCurrentPokemon].currentHP >= cpu.pokemon[cpuCurrentPokemon].hp)
+				cpu.pokemon[cpuCurrentPokemon].currentHP = cpu.pokemon[cpuCurrentPokemon].hp;
+			printf("%s uses potion! %s has HP %d!\n", cpu.name, cpuPokemon, cpu.pokemon[cpuCurrentPokemon].currentHP);
+			printf("%s has %d potions left.\n", cpu.name, cpu.potions);
+		}
+		else if(cpuOption > 83) {
+			cpuCurrentPokemon = switchPokemon(user, 0);
+			strcpy(cpuPokemon, cpu.pokemon[cpuCurrentPokemon].name);
+			printf("%s brings out %s!\n\n", cpu.name, cpuPokemon);
+		}
 		
 		fflush(stdin);
 	}
@@ -437,7 +587,18 @@ int main() {
 	}
 	else {
 		printEndingMessage();
+		exit(1);
 	}
+	
+	system("@cls||clear");
+	if(winner) {
+		printf("User wins!\n");
+	}
+	else {
+		printf("Computer wins!\n");
+	}
+	
+	printf("Thank you for playing.\n");
 	
 	return 0;
 }
